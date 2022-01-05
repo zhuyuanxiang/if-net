@@ -1,21 +1,21 @@
 
-# Implict Feature Networks
-> Implicit Functions in Feature Space for Shape Reconstruction and Completion <br />
+# 隐特征网络（Implict Feature Networks）
+
+> 隐函数在特征空间中用于形状重建和补全 <br />
 > [Julian Chibane](http://virtualhumans.mpi-inf.mpg.de/people/Chibane.html), [Thiemo Alldieck](http://virtualhumans.mpi-inf.mpg.de/people/alldieck.html), [Gerard Pons-Moll](http://virtualhumans.mpi-inf.mpg.de/people/pons-moll.html)
 
 ![Teaser](teaser.gif)
 
-[Paper](https://virtualhumans.mpi-inf.mpg.de/papers/chibane20ifnet/chibane20ifnet.pdf) - 
-[Supplementaty](https://virtualhumans.mpi-inf.mpg.de/papers/chibane20ifnet/chibane20ifnet_supp.pdf) -
-[Project Website](https://virtualhumans.mpi-inf.mpg.de/ifnets/) -
+[论文](https://virtualhumans.mpi-inf.mpg.de/papers/chibane20ifnet/chibane20ifnet.pdf) - 
+[补充材料](https://virtualhumans.mpi-inf.mpg.de/papers/chibane20ifnet/chibane20ifnet_supp.pdf) -
+[项目代码](https://virtualhumans.mpi-inf.mpg.de/ifnets/) -
 [Arxiv](https://arxiv.org/abs/2003.01456) -
 [Video](https://youtu.be/cko07jINRZg) -
 Published in CVPR 2020.
 
+## 引用
 
-#### Citation
-
-If you find our code or paper usful for your project, please consider citing:
+如果你发现我们的代码或者论文对你们的项目有用，请考虑引用：
 
     @inproceedings{chibane20ifnet,
         title = {Implicit Functions in Feature Space for 3D Shape Reconstruction and Completion},
@@ -28,22 +28,23 @@ If you find our code or paper usful for your project, please consider citing:
 
 ## Install
 
-A linux system with cuda 9.0 is required for the project.
+本项目需要安装了CUDA 9.0 的 Linux 系统。
 
-The `if-net_env.yml` file contains all necessary python dependencies for the project.
-To conveniently install them automatically with [anaconda](https://www.anaconda.com/) you can use:
-```
+文件 `if-net_env.yml` 包含了项目需要的所有 Python 依赖，为了方便安装这些依赖可以使用 [anaconda](https://www.anaconda.com/) ：
+
+```shell
 conda env create -f if-net_env.yml
 conda activate if-net
 ```
 
-Please clone the repository and navigate into it in your terminal, its location is assumed for all subsequent commands.
+请克隆这个仓库，并在你的终端中浏览它，它的定位假设了随后的所有命令。
 
-> This project uses libraries for [Occupancy Networks](https://github.com/autonomousvision/occupancy_networks) by [Mescheder et. al. CVPR'19] 
-> and the ShapeNet data preprocessed for [DISN](https://github.com/Xharlie/DISN) by [Xu et. al. NeurIPS'19], please also cite them if you use our code.
+> 这个项目使用了 [^Mescheder et. al. CVPR'19] 的 [Occupancy Networks](https://github.com/autonomousvision/occupancy_networks)  的库
+> 以及 [^Xu et. al. NeurIPS'19] 的 [DISN](https://github.com/Xharlie/DISN) 预处理的  ShapeNet 数据集，请在你使用我们的代码中也引用它们。
 
-Install the needed libraries with:
-```
+安装所需要的这些库：
+
+```shell
 cd data_processing/libmesh/
 python setup.py build_ext --inplace
 cd ../libvoxelize/
@@ -51,114 +52,140 @@ python setup.py build_ext --inplace
 cd ../..
 ```
 
-## Data Preparation
-The full prepared data will take up 800 GB in total. Download the [ShapeNet](https://www.shapenet.org/) data preprocessed by [Xu et. al. NeurIPS'19] from [here](https://drive.google.com/drive/folders/1QGhDW335L7ra31uw5U-0V7hB-viA0JXr)
-into the `shapenet` folder.
+## 数据准备
 
-Now extract the files into `shapenet\data` with:
+全部准备好数据大约需要 800 GB。下载 [Xu et. al. NeurIPS'19] 预处理的 [ShapeNet](https://www.shapenet.org/) 数据： [数据地址](https://drive.google.com/drive/folders/1QGhDW335L7ra31uw5U-0V7hB-viA0JXr)，并保存在 `shapenet` 文件夹中。
 
-```
+现在抽取文件到 `shapenet\data` ：
+
+```shell
 ls shapenet/*.tar.gz |xargs -n1 -i tar -xf {} -C shapenet/data/
 ```
 
-Next, the inputs and training point samples for IF-Nets are created. The following three commands can be run in parallel on multiple machines to significantly increase speed.
-First, the data is converted to the .off-format and scaled using
-```
+接下来，用于 IF-Nets 的输入和训练的点样本将被创建。下面三个命令可以并行地在多台机器上执行，并且可以显著地增加准备的速度。
+首先，数据被转换为 `.off`-格式，并且使用下面的命令缩放：
+
+```shell
 python data_processing/convert_to_scaled_off.py
 ```
-The input data for Voxel Super-Resolution of voxels is created with
-```
+
+用于体素超分辨率的输入数据使用下面的命令创建：
+
+```shell
 python data_processing/voxelize.py -res 32
 ```
-using `-res 32` for 32<sup>3</sup> and `-res 128` for 128<sup>3</sup> resolution.
 
-The input data for Point Cloud Completion is created with
-```
+使用 `-res 32` 指定 32<sup>3</sup> 和 `-res 128` 指定 128<sup>3</sup> 分辨率。
+
+点云补全的输入数据的创建：
+
+```shell
 python data_processing/voxelized_pointcloud_sampling.py -res 128 -num_points 300
 ```
-using `-num_points 300` for point clouds with 300 points and `-num_points 3000` for 3000 points.
 
-Training input points and the corresponding ground truth occupancy values are generated with
-```
+使用 `-num_points 300` 用于 300个点的点云，使用 `-num_points 3000` 用于3000个点的点云。
+
+训练的输入点和对应的基准占位值由下面的命令生成：
+
+```shell
 python data_processing/boundary_sampling.py -sigma 0.1
 python data_processing/boundary_sampling.py -sigma 0.01
 ```
-where `-sigma` specifies the standard deviation of the normally distributed displacements added onto surface samples.
 
-In order to remove meshes that could not be preprocessed (should not be more than around 15 meshes) you should run
-```
+其中 `-sigma` 指定的是加入到曲面抽样中的正态分布位移的标准方差。
+
+为了移除不能被预处理（小于 15 个面片）的网格可以执行下面的命令：
+
+```shell
 python data_processing/filter_corrupted.py -file 'voxelization_32.npy' -delete
 ```
-The input data can be visualized by converting them to .off-format using
-```
+
+输入的数据可以使用下面的命令将体素转换为 `.off`-格式从而可视化：
+
+```shell
 python data_processing/create_voxel_off.py -res 32
 ```
-for voxel input and 
-```
+
+将？转换为 `.off`-格式从而可视化：
+
+```shell
 python data_processing/create_pc_off.py -res 128 -num_points 300
 ```
-where `-res` and `-num_points` matches the values from the previous steps.
 
-## Training
-The training of IF-Nets is started running
-```
+其中 `-res` 和 `-num_points` 匹配着来自前一步的值。
+
+## 训练
+
+IF-Nets的训练由下面的命令开始：
+
+```shell
 python train.py -std_dev 0.1 0.01 -res 32 -m ShapeNet32Vox -batch_size 6
 ```
-where `-std_dev` indicates the sigmas to use, `-res` the input resolution (32<sup>3</sup> or 128<sup>3</sup>), `-m` the IF-Net model setup
-+ ShapeNet32Vox for 32<sup>3</sup> voxel Super-Resolution experiment
-+ ShapeNet128Vox for 128<sup>3</sup> voxel Super-Resolution experiment
-+ ShapeNetPoints for Point Cloud Completion experiments
-+ SVR for 3D Single-View Reconstruction
 
-and `-batch_size` the number of different meshes inputted in a batch, each with 50.000 point samples (=6 for small GPU's). 
-If you want to train with point cloud input please add `-pointcloud` and `-pc_samples` followed by the number of point samples used, e.g. `-pc_samples 3000`.
-Consider using the highest possible `batch_size` in order to speed up training.
+其中 `-std_dev` 表示使用的 `sigma` 值， `-res` 表示输入的分辨率（32<sup>3</sup> 或者 128<sup>3</sup>）， `-m` 表示 IF-Net 模型的设置：
 
-In the `experiments/` folder you can find an experiment folder containing the model checkpoints, the checkpoint of validation minimum, and a folder containing a tensorboard summary, which can be started at with
-```
+- ShapeNet32Vox for 32<sup>3</sup> voxel Super-Resolution experiment
+- ShapeNet128Vox for 128<sup>3</sup> voxel Super-Resolution experiment
+- ShapeNetPoints for Point Cloud Completion experiments
+- SVR for 3D Single-View Reconstruction
+
+其中 `-batch_size` 表示一个批处理中输入的不同的网格的数目，每从此网格包含5万个点样本（=6 用于较小的 GPU）。
+
+如果你希望使用点云训练可以加上 `-pointcloud` 和 `-pc_samples` 确认使用的点样本的数目，即： `-pc_samples 3000`。
+考虑使用最高可能的 `batch_size` 从而加速训练。
+
+在 `experiments/` 目录中，你可以找到一个实验目录，实验目录包含了模型的检查点、验证最小值的检查点和包含了 tensorboard 汇总信息的目录，这个 tensorboard 可以使用下面的命令启动：
+
+```shell
 tensorboard --logdir experiments/YOUR_EXPERIMENT/summary/ --host 0.0.0.0
 ```
-## Generation
-The command
-```
+
+## 生成
+
+```shell
 python generate.py -std_dev 0.1 0.01 -res 32 -m ShapeNet32Vox -checkpoint 10 -batch_points 400000
 ```
-generates the reconstructions of the, during training unseen, test examples from ShapeNet into  the folder 
-```experiments/YOUR_EXPERIMENT/evaluation_CHECKPOINT_@256/generation```.
-With `-checkpoint` you can choose the IF-Net model checkpoint. Use the model with minimum validation error for this, 
-`-batch_points` indicates the number of points that fit into GPU memory at once (400k for small GPU's). Please also add all parameters set during training. 
-> The generation script can be run on multiple machines in parallel in order to increase generation speed significantly. Also, consider using the maximal batch size possible for your GPU.
-## Evaluation
-Please run
 
-```
+上述命令生成了来自于 ShapeNet 的测试样本的重建（训练阶段没有重建）到一个目录中
+```experiments/YOUR_EXPERIMENT/evaluation_CHECKPOINT_@256/generation```.
+使用 `-checkpoint` 可以选择 IF-Nets 的检查点。使用具有最小验证错误值的模型可以使用
+`-batch_points` 即刻指定匹配 GPU 内存的点的数目（40万用于小GPU）。
+请在训练期间加入所有的参数。
+> 生成的脚本可以同时运行在多台机器上以显著地增加生成的速度。而且，在你的 GPU 上尽可能地使用最大的批处理大小的值。
+
+## 评估
+
+```shell
 python data_processing/evaluate.py -reconst -generation_path experiments/iVoxels_dist-0.5_0.5_sigmas-0.1_0.01_v32_mShapeNet32Vox/evaluation_10_@256/generation/
 ```
-to evaluate each reconstruction, where `-generation_path` is the path to the reconstructed objects generated in the previous step.
-> The above evaluation script can be run on multiple machines in parallel in order to increase generation speed significantly.
 
-Then run
-```
+上述命令用于评估每一次重建，其中 `-generation_path` 是在前一步中生成重建对象的对象。
+> 上述的评估脚本可以并行地运行在多台机器上从而显著地增加生成的速度。
+
+```shell
 python data_processing/evaluate.py -voxels -res 32
 ```
- to evaluate the quality of the input. For voxel girds use '-voxels' with '-res' to specify the input resolution and for point clouds use '-pc' with '-points' to specify the number of points.
 
-The quantitative evaluation of all reconstructions and inputs are gathered and put into `experiment/YOUR_EXPERIMENT/evaluation_CHECKPOINT_@256` using
+上述命令用于评估输入的质量。对于体素网格使用 `-voxels` 增加 `-res` 去指定输入的分辨率，而对于点云使用 `-pc` 增加 `-points` 指定点的数目。
 
-```
+所有重建和输入的定量评估采用下面的命令收集起来，并且存入 `experiment/YOUR_EXPERIMENT/evaluation_CHECKPOINT_@256` 目录：
+
+```shell
 python data_processing/evaluate_gather.py -voxel_input -res 32 -generation_path experiments/iVoxels_dist-0.5_0.5_sigmas-0.1_0.01_v32_mShapeNet32Vox/evaluation_10_@256/generation/
 ```
-where you should use `-voxel_input` for Voxel Super-Resolution experiments, with `-res` specifying the input resolution or `-pc_input` for Point Cloud Completion, with `-points` specifying the number of points used.
 
-## Pretrained Models
+其中， `-voxel_input` 表示体素超分辨率实验，同时紧跟 `-res` 表示输入的分辨率 或者 `-pc_input` 表示点云实例，同时紧跟 `-points` 表示使用的点的数目。
 
-Pretrained models can be found [here](https://nextcloud.mpi-klsb.mpg.de/index.php/s/rdBogFjm3LSxYGy).
+## 预训练模型
 
-## Contact
+[预训练模型的下载地址](https://nextcloud.mpi-klsb.mpg.de/index.php/s/rdBogFjm3LSxYGy).
 
-For questions and comments regarding the code please contact [Julian Chibane](http://virtualhumans.mpi-inf.mpg.de/people/Chibane.html) via mail. (See Paper)
+## 联系方式
 
-## License
+可以通过 Email 地址联系 [Julian Chibane](http://virtualhumans.mpi-inf.mpg.de/people/Chibane.html) 了解代码中的问题和注释。（参见论文）
+
+## 版本
+
 Copyright (c) 2020 Julian Chibane, Max-Planck-Gesellschaft
 
 Please read carefully the following terms and conditions and any accompanying documentation before you download and/or use this software and associated documentation files (the "Software").
